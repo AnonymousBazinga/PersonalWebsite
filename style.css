@@ -1,0 +1,44 @@
+body {
+    background-color: #F1F1EF;
+    color: #444444;
+    font-family: "IBM Plex Serif", serif;;
+    padding: 10%;
+    margin-left: 15%;
+    margin-right: 15%;
+}
+
+h1, h2 {
+    font-family: sans-serif;
+    color: #333;
+}
+
+a {
+    color: #444444;
+    /* text-decoration: none; */
+}
+
+a::visited {
+    color: #d2d0d0;
+}
+
+li {
+    padding: 0.5%;
+    list-style: none;
+}
+
+footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+    padding: 1%;
+}
+
+hr {
+    padding: 1%;
+    border-top: 1px solid #e3e3e3;
+    border-bottom: none;
+    border-left: none;
+    border-right: none;
+}
