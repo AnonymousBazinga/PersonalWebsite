@@ -1,0 +1,73 @@
+<html>
+	<head>
+		<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+        <!-- <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet"> -->
+        <!-- <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&display=swap" rel="stylesheet"> -->
+        <!-- <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet"> -->
+        <link href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+		<link rel="stylesheet" href="../style.css">
+		<style>
+			li {
+				list-style-type: disc;
+			}
+		</style>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+		<title>Transformer Math (Oversimplified)</title>
+	</head>
+	<body>
+		<h1 id="transformer-math-oversimplified-">Transformer Math (Oversimplified)</h1>
+		<p>This blog is an attempt to unify abstract vague concepts I frequently hear in transformers into a more tangible, traceable illustration. I initially wrote this to condense my learning when going through Andrej Karpathy’s <a href="https://www.youtube.com/watch?v=PaCmpygFfXo">makemore</a> series.</p>
+		<p>3 core components to a transformer:</p>
+		<ul>
+		<li>Attention</li>
+		<li>MLP (dense feed-forward neural network)</li>
+		<li>Normalisation</li>
+		</ul>
+		<p>But before that, let's define some terms:</p>
+		<p>Sequence Length (L): 50 (50 tokens in each sentence)</p>
+		<p>Embedding Dimension (D): 512 (each token is a vector of 512 numbers)</p>
+		<b>tracing embedding:</b>
+		<p>Assume vocab size is 50000 tokens. </p>
+		<p>[50000, 512] is Embedding matrix dimensions</p>
+		<p>→ [50, 512] (pluck out the dimensions for the 50 tokens of the sentence)</p>
+		<b>tracing network:</b>
+		<p>[50, 512] Input dimensions into the neural net (each input token is embedded and stacked)</p>
+		<p>[512, 1024] let’s set 1024 neurons in the hidden layer. each has a weight vector of length 512.</p>
+		<p>[50, 512] x [512, 1024] → [50, 1024] is the hidden layer output.</p>
+		<p>i.e 1024 length vector represents activations of each of the 50 tokens</p>
+		<p>[50, 1024] x [1024, 512] → [50, 512] is the output layer.</p>
+		<p>i.e 512 length vector represents activations. each of the 50 tokens has one.</p>
+		<p><b>Point 1:</b> To visualise it easier, just consider 1 token. Then it becomes 512 (input) → 1024 → 512 (output) which corresponds to a <a href="https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Colored_neural_network.svg/960px-Colored_neural_network.svg.png">simple neural net visualisation</a>. But in reality each of the just saying “1024” misses the point since it’s actually 1024 neurons with each neuron being a weight vector of length 512. And similarly “512” (output layer) is actually 512 neurons each containing a weight vector of 1024 dimensions from the previous layer. </p>
+		<p><b>Point 2:</b> notice the 50 remains through the trace. Once we add in attention, this 50 is the context window of attention.</p>
+		<p><b>Point 3:</b> the 50 words never actually talk to each other. The training objective is prediction of the next word (that’s what backpropogates). But all 50 words in the sequence are independently trying to predict the next word for itself with no interaction between them. So effectively this becomes a bigram model.</p>
+		<p><b>Point 4</b>: there’s usually also a batches aspect (8 batches of this process) which is so GPU can optimise training. But I have excluded this for simplicity.</p>
+		<b>tracing generation:</b>
+		<p>[512, 50000] is transposed embedding matrix = “Language model head” or “LM head”</p>
+		<p>[50, 512] x [512, 50000] → [50, 50000] is the 50 tokens to be generated </p>
+		<p>i.e row 1 predicts word 2 in the sequence. row 2 predicts word 3 in the sequence… and thus row 50 predicts the 51st word (but no attention means it’s based only on the 50th word)</p>
+		<b>now add in attention:</b>
+		<p>[50, 1024] is the activations of the hidden layer.</p>
+		<p>instead of throwing it into a 512 neuron output layer, let’s throw it into 3 separate linear layers</p>
+		<p>[1024, 512], [1024, 512], [1024, 512]</p>
+		<p>→ [50, 512], [50, 512], [50, 512] output activations of the 3 linear layers</p>
+		<p>[50, 512] x [512, 50] transpose one of them = “Keys”; and multiply with another = “Queries”</p>
+		<p>[50, 50] attention matrix is found. Represents activation of each token in sequence with the other.</p>
+		<p>[50, 50] x [50, 512] multiply attention matrix with the third matrix = “Values”</p>
+		<p>→ [50, 512] output activations which have attention/ spoken to each other.</p>
+		<b>Here are some terms I left out defined:</b>
+		<p>"Normalisation"</b> = This layer standardizes the inputs across the features to a mean of 0 and a variance of 1, which prevents the internal values from exploding or vanishing and makes training significantly faster and more stable</p>
+		<p>"Attention Heads"</b> = In above trace, I used a single 512-wide block. In reality, the model splits that 512 into &quot;Heads.&quot;</p>
+		<ul>
+		<li>If we have 8 heads, the 512 dimensions are split into 8 chunks of 64.</li>
+		<li>New Shape: [8,50,64] (8 heads, 50 tokens, 64 features per head).</li>
+		<li>They are Concatenated at the end to return to [50, 512].</li>
+		</ul>
+		<p>"Residual Connections" = The model doesn&#39;t just take that &quot;Attention Output&quot; and move on. It uses a Residual Connection (Add).</p>
+		<ul>
+		<li>The Math: Input[50,512]+Attention Output[50,512].</li>
+		<li>Intuition: This ensures that if the attention mechanism fails or learns nothing, the original identity of the token is preserved. It prevents the signal from getting &quot;lost&quot; in deep networks.</li>
+		</ul>
+		<p>Final note: there’s all sorts of strategies for softmax, normalizing, batches etc. which I deliberately excluded for simplicity.</p>
+	</body>
+</html>
