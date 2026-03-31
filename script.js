@@ -1,4 +1,8 @@
 document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.definition').forEach(function(el) {
+        el.setAttribute('tabindex', '0');
+    });
+
     var citations = document.querySelectorAll('.footnote-citation');
     var wide = window.innerWidth > 1200;
 

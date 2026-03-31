@@ -98,6 +98,29 @@ hr {
     color: #444;
 }
 
+.definition {
+    text-decoration: underline dotted #aaa;
+    cursor: help;
+    position: relative;
+}
+
+.definition:hover::after,
+.definition:focus::after {
+    content: attr(data-definition);
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 6px);
+    transform: translateX(-50%);
+    background: #333;
+    color: #f5f5f5;
+    font-weight: normal;
+    padding: 6px 12px;
+    font-size: 0.8em;
+    width: max-content;
+    max-width: 280px;
+    z-index: 10;
+}
+
 @media (max-width: 1200px) {
     .footnote {
         position: static;
